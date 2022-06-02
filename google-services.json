@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "350670147378",
+    "project_id": "android-finals-caebc",
+    "storage_bucket": "android-finals-caebc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350670147378:android:3c216345285ec9a5a5d12b",
+        "android_client_info": {
+          "package_name": "com.example.eldroid_final"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "350670147378-eav02hidjo3hrc8u1u1md47vd3mj43vu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnXHbcNsyGe9x7h-QLybyoRDNFrP-Kk40"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "350670147378-eav02hidjo3hrc8u1u1md47vd3mj43vu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
