@@ -192,15 +192,15 @@ public class user_form extends AppCompatActivity {
             {
                 et_lastName.setError("This field is required");
             }
-            else if (TextUtils.isEmpty(contactNum))
-            {
-                et_contactNumber.setError("This field is required");
-            }
-            else if (TextUtils.isEmpty(username) )
+            else if (TextUtils.isEmpty(username))
             {
                 et_username.setError("This field is required");
             }
-            else if (contactNum.length() < 11)
+            else if (TextUtils.isEmpty(contactNum) )
+            {
+                et_contactNumber.setError("This field is required");
+            }
+            else if (contactNum.length() != 12)
             {
                 et_contactNumber.setError("Contact number must be 11 digit");
             }
@@ -271,15 +271,15 @@ public class user_form extends AppCompatActivity {
         {
             et_lastName.setError("This field is required");
         }
-        else if (TextUtils.isEmpty(contactNum))
-        {
-            et_contactNumber.setError("This field is required");
-        }
         else if (TextUtils.isEmpty(username) )
         {
             et_username.setError("This field is required");
         }
-        else if (contactNum.length() != 11)
+        else if (TextUtils.isEmpty(contactNum))
+        {
+            et_contactNumber.setError("This field is required");
+        }
+        else if (contactNum.length() != 12)
         {
             et_contactNumber.setError("Contact number must be 11 digit");
         }
@@ -335,13 +335,13 @@ public class user_form extends AppCompatActivity {
         {
             et_lastName.setError("This field is required");
         }
-        else if (TextUtils.isEmpty(contactNum))
-        {
-            et_contactNumber.setError("This field is required");
-        }
         else if (TextUtils.isEmpty(username) )
         {
             et_username.setError("This field is required");
+        }
+        else if (TextUtils.isEmpty(contactNum))
+        {
+            et_contactNumber.setError("This field is required");
         }
         else if (contactNum.length() != 11)
         {

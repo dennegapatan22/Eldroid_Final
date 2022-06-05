@@ -13,14 +13,6 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DJ's"
-            android:textStyle="bold"
-            android:textColor="@color/black"
-            android:textSize="40sp"/>
-
         <ImageView
             android:id="@+id/iv_profile_photo"
             android:layout_width="match_parent"

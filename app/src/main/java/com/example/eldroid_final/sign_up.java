@@ -100,18 +100,13 @@ public class sign_up extends AppCompatActivity {
         {
             et_username.setError("Incorrect Email Format");
         }
-        else if (contactNum.length() < 11)
+        else if (contactNum.length() != 12)
         {
-            et_contactNumber.setError("Contact number must be 10 digit");
+            et_contactNumber.setError("Contact number must be 11 digit");
         }
         else if (TextUtils.isEmpty(password))
         {
             Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-        }
-        else if (password.length() < 8)
-        {
-            Toast.makeText(this, "Password must be 8 or more characters", Toast.LENGTH_LONG).show();
-
         }
         else if (!isValidPassword(password))
         {
