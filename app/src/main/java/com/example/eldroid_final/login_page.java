@@ -32,10 +32,8 @@ import java.util.regex.Pattern;
 
 public class login_page extends AppCompatActivity {
 
-    private EditText et_username, et_password;
-    private Button btn_login, btn_ForgotPassword, btn_signUp;
-    private FirebaseAuth fAuth;
-    private DatabaseReference userDatabase;
+    EditText et_username, et_password;
+    FirebaseAuth fAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,16 +46,12 @@ public class login_page extends AppCompatActivity {
             Intent intent = new Intent(login_page.this, MainActivity.class);
             startActivity(intent);
         }
-
-
-
-        setRef();
-        ClickListener();
-
-
-    }
-
-    private void ClickListener() {
+        et_username = findViewById(R.id.et_username);
+        et_password = findViewById(R.id.et_password);
+        Button btn_ForgotPassword = findViewById(R.id.btn_ForgotPassword);
+        Button btn_signUp = findViewById(R.id.btn_signUp);
+        Button btn_login = findViewById(R.id.btn_login);
+        fAuth = FirebaseAuth.getInstance();
 
         btn_signUp.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -173,29 +167,4 @@ public class login_page extends AppCompatActivity {
 
     }
 
-    private boolean isValidPassword(String password) {
-        String regex = "^(?=.*[0-9])"
-                + "(?=.*[a-z])(?=.*[A-Z])"
-                + "(?=.*[@#$%^&+=?!#$%&()*+,./])"
-                + "(?=\\S+$).{8,15}$";
-
-
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(password);
-
-        return m.matches();
-    }
-
-    private void setRef() {
-
-
-        et_username = findViewById(R.id.et_username);
-        et_password = findViewById(R.id.et_password);
-        btn_ForgotPassword = findViewById(R.id.btn_ForgotPassword);
-        btn_signUp = findViewById(R.id.btn_signUp);
-        btn_login = findViewById(R.id.btn_login);
-        fAuth = FirebaseAuth.getInstance();
-
-
-    }
 }

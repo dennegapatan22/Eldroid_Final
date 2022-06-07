@@ -29,17 +29,17 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 
 public class MainActivity extends AppCompatActivity {
 
-    private List<Users> arrUsers, arr;
-    private List<String> arrKey;
-    private AdapterUsersItem adapterUsersItem, adapter;
-    private FirebaseAuth fAuth;
-    private FirebaseUser user;
-    private DatabaseReference userDB;
+    TextView tv_back;
+    SearchView sv_search;
+    RecyclerView recyclerView_searches;
+    Button btn_add;
+    List<Users> arrUsers, arr;
+    List<String> arrKey;
+    AdapterUsersItem adapterUsersItem, adapter;
+    FirebaseAuth fAuth;
+    FirebaseUser user;
+    DatabaseReference userDB;
 
-    private TextView tv_back;
-    private SearchView sv_search;
-    private RecyclerView recyclerView_searches;
-    private Button btn_add;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,17 +50,52 @@ public class MainActivity extends AppCompatActivity {
         userDB = FirebaseDatabase.getInstance().getReference("Users");
 
 
-        setRef();
+        tv_back = findViewById(R.id.tv_back);
+        sv_search = findViewById(R.id.sv_search);
+        recyclerView_searches = findViewById(R.id.recyclerView_searches);
+        btn_add = findViewById(R.id.btn_add);
 
-        generateRecyclerLayout();
-        generateDataValue();
-        clickListeners();
+        recyclerView_searches.setHasFixedSize(true);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        recyclerView_searches.setLayoutManager(linearLayoutManager);
+
+        arrUsers = new ArrayList<>();
+        arrKey = new ArrayList<>();
+        adapterUsersItem = new AdapterUsersItem(arrUsers);
+        recyclerView_searches.setAdapter(adapterUsersItem);
+
+        retrieveData();
+        clicks();
     }
 
-    private void generateDataValue() {
+    private void retrieveData() {
         if(userDB != null)
         {
-            getViewHolderValues();
+            userDB.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for(DataSnapshot dataSnapshot : snapshot.getChildren())
+                    {
+                        Users users = dataSnapshot.getValue(Users.class);
+
+                        String keyID = dataSnapshot.getKey().toString();
+                        String userID = user.getUid();
+                        if(users.userId.equals(userID))
+                        {
+                            continue;
+                        }
+
+                        arrUsers.add(users);
+                        arrKey.add(keyID);
+                    }
+                    adapterUsersItem.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
 
         }
         if(sv_search != null)
@@ -81,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void clickListeners() {
+    private void clicks() {
         tv_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -124,49 +159,6 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("category", "edit");
                 intent.putExtra("user id", keyID);
                 startActivity(intent);
-            }
-        });
-    }
-
-    private void generateRecyclerLayout() {
-
-        recyclerView_searches.setHasFixedSize(true);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        recyclerView_searches.setLayoutManager(linearLayoutManager);
-
-        arrUsers = new ArrayList<>();
-        arrKey = new ArrayList<>();
-        adapterUsersItem = new AdapterUsersItem(arrUsers);
-        recyclerView_searches.setAdapter(adapterUsersItem);
-
-
-    }
-
-    private void getViewHolderValues() {
-
-        userDB.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot dataSnapshot : snapshot.getChildren())
-                {
-                    Users users = dataSnapshot.getValue(Users.class);
-
-                    String keyID = dataSnapshot.getKey().toString();
-                    String userID = user.getUid();
-                    if(users.userId.equals(userID))
-                    {
-                        continue;
-                    }
-
-                    arrUsers.add(users);
-                    arrKey.add(keyID);
-                }
-                adapterUsersItem.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
             }
         });
     }
@@ -218,10 +210,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void setRef() {
-        tv_back = findViewById(R.id.tv_back);
-        sv_search = findViewById(R.id.sv_search);
-        recyclerView_searches = findViewById(R.id.recyclerView_searches);
-        btn_add = findViewById(R.id.btn_add);
-    }
 }

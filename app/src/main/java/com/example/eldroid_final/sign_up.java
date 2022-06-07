@@ -31,8 +31,8 @@ public class sign_up extends AppCompatActivity {
     TextView tv_signIn;
     Button btn_signUp;
     FirebaseAuth fAuth;
-    private FirebaseUser user;
-    private DatabaseReference userDatabase;
+    FirebaseUser user;
+    DatabaseReference userDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,12 +41,20 @@ public class sign_up extends AppCompatActivity {
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         userDatabase = FirebaseDatabase.getInstance().getReference(Users.class.getSimpleName());
-        setRef();
-        ClickListener();
+        tv_signIn = findViewById(R.id.tv_signIn);
+        et_firstName = findViewById(R.id.et_firstName);
+        et_lastName = findViewById(R.id.et_lastName);
+        et_contactNumber = findViewById(R.id.et_contactNumber);
+        et_username = findViewById(R.id.et_username);
+        et_password_signup = findViewById(R.id.et_password_signup);
+        btn_signUp = findViewById(R.id.btn_signUp);
+        fAuth = FirebaseAuth.getInstance();
+
+        clicks();
 
     }
 
-    private void ClickListener() {
+    private void clicks() {
 
         tv_signIn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,110 +68,104 @@ public class sign_up extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                signUpUser();
 
+                String firstName = et_firstName.getText().toString();
+                String lastName = et_lastName.getText().toString();
+                String username = et_username.getText().toString();
+                String password = et_password_signup.getText().toString();
+                String contactNum = "0" + et_contactNumber.getText().toString();
+                String imageName = "";
+                String imageUrl = "";
+                String ratings = "0";
+
+
+                if (TextUtils.isEmpty(firstName))
+                {
+                    et_firstName.setError("This field is required");
+                }
+                else if (TextUtils.isEmpty(lastName))
+                {
+                    et_lastName.setError("This field is required");
+                }
+                else if (TextUtils.isEmpty(contactNum))
+                {
+                    et_contactNumber.setError("This field is required");
+                }
+                else if (TextUtils.isEmpty(username) )
+                {
+                    et_username.setError("This field is required");
+                }
+                else if ( !Patterns.EMAIL_ADDRESS.matcher(username).matches())
+                {
+                    et_username.setError("Incorrect Email Format");
+                }
+                else if (contactNum.length() != 12)
+                {
+                    et_contactNumber.setError("Contact number must be 11 digit");
+                }
+                else if (TextUtils.isEmpty(password))
+                {
+                    Toast.makeText(sign_up.this, "Password is required", Toast.LENGTH_SHORT).show();
+                }
+                else if (!isValidPassword(password))
+                {
+                    Toast.makeText(sign_up.this, "Please choose a stronger password. Try a mix of letters, numbers, and symbols.", Toast.LENGTH_LONG).show();
+                }
+                else
+                {
+                    final ProgressDialog progressDialog = new ProgressDialog(sign_up.this);
+                    progressDialog.setTitle("Creating account");
+                    progressDialog.show();
+
+                    fAuth.createUserWithEmailAndPassword(username, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+
+                            fAuth.signInWithEmailAndPassword(username, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                                @Override
+                                public void onComplete(@NonNull Task<AuthResult> task) {
+                                    if (task.isSuccessful()) {
+
+                                        //String uid = fAuth.getCurrentUser().getUid().toString();
+
+                                        user = fAuth.getCurrentUser();
+                                        String uid  = user.getUid();
+
+
+                                        Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageUrl, ratings);
+
+                                        userDatabase.child(user.getUid())
+                                                .setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                if (task.isSuccessful()) {
+                                                    progressDialog.dismiss();
+                                                    fAuth.getInstance().signOut();
+                                                    Intent intent = new Intent(sign_up.this, login_page.class);
+                                                    startActivity(intent);
+                                                    Toast.makeText(sign_up.this, "User Created", Toast.LENGTH_LONG).show();
+
+                                                } else {
+                                                    Toast.makeText(sign_up.this, "Creation Failed " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                        });
+
+
+                                    } else
+                                    {
+                                        Toast.makeText(sign_up.this, "Creation Failed " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+
+
+                        }
+                    });
+                }
             }
         });
 
-    }
-
-    private void signUpUser() {
-
-
-        String firstName = et_firstName.getText().toString();
-        String lastName = et_lastName.getText().toString();
-        String username = et_username.getText().toString();
-        String password = et_password_signup.getText().toString();
-        String contactNum = "0" + et_contactNumber.getText().toString();
-        String imageName = "";
-        String imageUrl = "";
-        String ratings = "0";
-
-
-        if (TextUtils.isEmpty(firstName))
-        {
-            et_firstName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(lastName))
-        {
-            et_lastName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(contactNum))
-        {
-            et_contactNumber.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(username) )
-        {
-            et_username.setError("This field is required");
-        }
-        else if ( !Patterns.EMAIL_ADDRESS.matcher(username).matches())
-        {
-            et_username.setError("Incorrect Email Format");
-        }
-        else if (contactNum.length() != 12)
-        {
-            et_contactNumber.setError("Contact number must be 11 digit");
-        }
-        else if (TextUtils.isEmpty(password))
-        {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-        }
-        else if (!isValidPassword(password))
-        {
-            Toast.makeText(this, "Please choose a stronger password. Try a mix of letters, numbers, and symbols.", Toast.LENGTH_LONG).show();
-        }
-        else
-        {
-            final ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setTitle("Creating account");
-            progressDialog.show();
-
-            fAuth.createUserWithEmailAndPassword(username, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                @Override
-                public void onComplete(@NonNull Task<AuthResult> task) {
-
-                    fAuth.signInWithEmailAndPassword(username, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()) {
-
-                                //String uid = fAuth.getCurrentUser().getUid().toString();
-
-                                user = fAuth.getCurrentUser();
-                                String uid  = user.getUid();
-
-
-                                Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageUrl, ratings);
-
-                                userDatabase.child(user.getUid())
-                                        .setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        if (task.isSuccessful()) {
-                                            progressDialog.dismiss();
-                                            fAuth.getInstance().signOut();
-                                            Intent intent = new Intent(sign_up.this, login_page.class);
-                                            startActivity(intent);
-                                            Toast.makeText(sign_up.this, "User Created", Toast.LENGTH_LONG).show();
-
-                                        } else {
-                                            Toast.makeText(sign_up.this, "Creation Failed " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-                                });
-
-
-                            } else
-                            {
-                                Toast.makeText(sign_up.this, "Creation Failed " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-
-
-                }
-            });
-        }
     }
 
     private static boolean isValidPassword(String password) {
@@ -180,16 +182,5 @@ public class sign_up extends AppCompatActivity {
         return m.matches();
     }
 
-    private void setRef() {
 
-        tv_signIn = findViewById(R.id.tv_signIn);
-        et_firstName = findViewById(R.id.et_firstName);
-        et_lastName = findViewById(R.id.et_lastName);
-        et_contactNumber = findViewById(R.id.et_contactNumber);
-        et_username = findViewById(R.id.et_username);
-        et_password_signup = findViewById(R.id.et_password_signup);
-        btn_signUp = findViewById(R.id.btn_signUp);
-        fAuth = FirebaseAuth.getInstance();
-
-    }
 }

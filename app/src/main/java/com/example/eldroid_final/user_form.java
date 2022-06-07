@@ -49,49 +49,53 @@ public class user_form extends AppCompatActivity {
 
 
 
-    private int PICK_IMAGE = 0;
-    private EditText et_firstName, et_lastName, et_contactNumber, et_username, et_password_signup,
-            et_confirmPassword;
-    private ImageView iv_profile_photo;
-    private TextView tv_uploadPhoto, textView;
-    private Button btn_signUp;
-    private FirebaseAuth fAuth;
-    private FirebaseUser user;
+    final int PICK_IMAGE = 0;
+    String category;
+    String userKey;
+    Uri imageUri;
+    EditText et_firstName, et_lastName, et_contactNumber, et_username;
+    ImageView iv_profile_photo;
+    TextView tv_uploadPhoto;
+    Button btn_signUp;
 
-    private StorageReference userStorage;
-    private DatabaseReference userDatabase;
+    StorageReference userStorage;
+    DatabaseReference userDatabase;
 
-    private String userID, category, userKey;
-    private Uri imageUri;
-    TextView textTargetUri;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_form);
 
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        userID = user.getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String userID = user.getUid();
         userDatabase = FirebaseDatabase.getInstance().getReference(Users.class.getSimpleName());
         userStorage = FirebaseStorage.getInstance().getReference("Users").child(userID);
         category = getIntent().getStringExtra("category");
         userKey = getIntent().getStringExtra("user id");
 
 
-        setRef();
-        ClickListener();
+        et_firstName = findViewById(R.id.et_firstName);
+        et_lastName = findViewById(R.id.et_lastName);
+        et_contactNumber = findViewById(R.id.et_contactNumber);
+        et_username = findViewById(R.id.et_username);
+        btn_signUp = findViewById(R.id.btn_signUp);
+        tv_uploadPhoto = findViewById(R.id.tv_uploadPhoto);
+        iv_profile_photo = findViewById(R.id.iv_profile_photo);
 
+        clicks();
         if(category != null)
         {
             if(category.equals("edit"))
             {
                 btn_signUp.setText("Update");
-                generateData(userKey);
+                retrieveData(userKey);
             }
         }
     }
 
-    private void generateData(String userKey) {
+    private void retrieveData(String userKey) {
         userDatabase.child(userKey).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -124,7 +128,7 @@ public class user_form extends AppCompatActivity {
         });
     }
 
-    private void ClickListener() {
+    private void clicks() {
 
         btn_signUp.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,17 +136,233 @@ public class user_form extends AppCompatActivity {
 
                 if(category != null) {
                     if (category.equals("edit")) {
-                        if (imageUri == null) {
-                            updateUserNoImage();
-                        } else {
-                            updateUser();
+                        if (imageUri == null)
+                        {
+                            String firstName = et_firstName.getText().toString();
+                            String lastName = et_lastName.getText().toString();
+                            String username = et_username.getText().toString();
+                            String contactNum = et_contactNumber.getText().toString();
+
+
+                            if (TextUtils.isEmpty(firstName))
+                            {
+                                et_firstName.setError("This field is required");
+                            }
+                            else if (TextUtils.isEmpty(lastName))
+                            {
+                                et_lastName.setError("This field is required");
+                            }
+                            else if (TextUtils.isEmpty(username) )
+                            {
+                                et_username.setError("This field is required");
+                            }
+                            else if (TextUtils.isEmpty(contactNum))
+                            {
+                                et_contactNumber.setError("This field is required");
+                            }
+                            else if (contactNum.length() != 12)
+                            {
+                                et_contactNumber.setError("Contact number must be 11 digit");
+                            }
+                            else
+                            {
+                                final ProgressDialog progressDialog = new ProgressDialog(user_form.this);
+                                progressDialog.setTitle("Creating account");
+                                progressDialog.show();
+
+                                HashMap<String, Object> hashMap = new HashMap<String, Object>();
+                                hashMap.put("firstName", firstName);
+                                hashMap.put("lastName", lastName);
+                                hashMap.put("contactNum", contactNum);
+                                hashMap.put("username", username);
+
+                                userDatabase.child(userKey).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+
+                                            progressDialog.dismiss();
+                                            Intent intent = new Intent(user_form.this, MainActivity.class);
+                                            startActivity(intent);
+                                            Toast.makeText(user_form.this, "User Updated", Toast.LENGTH_LONG).show();
+
+                                        } else {
+                                            Toast.makeText(user_form.this, "Update Failed ", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+
+                            }
                         }
+                        else
+                        {
+                                String firstName = et_firstName.getText().toString();
+                                String lastName = et_lastName.getText().toString();
+                                String username = et_username.getText().toString();
+                                String password = "";
+                                String contactNum = et_contactNumber.getText().toString();
+                                String ratings = "0";
+
+                                if (imageUri == null)
+                                {
+                                    Toast.makeText(user_form.this, "Profile photo is required", Toast.LENGTH_SHORT).show();
+                                }
+                                else if (TextUtils.isEmpty(firstName))
+                                {
+                                    et_firstName.setError("This field is required");
+                                }
+                                else if (TextUtils.isEmpty(lastName))
+                                {
+                                    et_lastName.setError("This field is required");
+                                }
+                                else if (TextUtils.isEmpty(username))
+                                {
+                                    et_username.setError("This field is required");
+                                }
+                                else if (TextUtils.isEmpty(contactNum) )
+                                {
+                                    et_contactNumber.setError("This field is required");
+                                }
+                                else if (contactNum.length() != 12)
+                                {
+                                    et_contactNumber.setError("Contact number must be 11 digit");
+                                }
+                                else
+                                {
+                                    final ProgressDialog progressDialog = new ProgressDialog(user_form.this);
+                                    progressDialog.setTitle("Creating account");
+                                    progressDialog.show();
+
+                                    StorageReference fileReference = userStorage.child(imageUri.getLastPathSegment());
+                                    String imageName = imageUri.getLastPathSegment();
+
+                                    fileReference.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                        @Override
+                                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                            fileReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                                @Override
+                                                public void onSuccess(Uri uri) {
+                                                    final String imageURL = uri.toString();
+
+                                                    String uid = "";
+                                                    Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageURL, ratings);
+
+                                                    userDatabase.child(userKey).setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                        @Override
+                                                        public void onComplete(@NonNull Task<Void> task) {
+                                                            if (task.isSuccessful()) {
+
+                                                                progressDialog.dismiss();
+                                                                Intent intent = new Intent(user_form.this, MainActivity.class);
+                                                                startActivity(intent);
+                                                                Toast.makeText(user_form.this, "User Created", Toast.LENGTH_LONG).show();
+
+                                                            } else {
+                                                                Toast.makeText(user_form.this, "Creation Failed ", Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            })
+                                                    .addOnFailureListener(new OnFailureListener() {
+                                                        @Override
+                                                        public void onFailure(@NonNull Exception e) {
+                                                            Toast.makeText(user_form.this, "Failed: ", Toast.LENGTH_LONG).show();
+                                                        }
+                                                    });
+
+                                        }
+                                    });
+
+
+                                }
+                            }
+
 
                     }
                 }
                 else
                 {
-                    signUpUser();
+                    String firstName = et_firstName.getText().toString();
+                    String lastName = et_lastName.getText().toString();
+                    String username = et_username.getText().toString();
+                    String password = "";
+                    String contactNum = et_contactNumber.getText().toString();
+                    String ratings = "0";
+
+                    if (imageUri == null)
+                    {
+                        Toast.makeText(user_form.this, "Profile photo is required", Toast.LENGTH_SHORT).show();
+                    }
+                    else if (TextUtils.isEmpty(firstName))
+                    {
+                        et_firstName.setError("This field is required");
+                    }
+                    else if (TextUtils.isEmpty(lastName))
+                    {
+                        et_lastName.setError("This field is required");
+                    }
+                    else if (TextUtils.isEmpty(username) )
+                    {
+                        et_username.setError("This field is required");
+                    }
+                    else if (TextUtils.isEmpty(contactNum))
+                    {
+                        et_contactNumber.setError("This field is required");
+                    }
+                    else if (contactNum.length() != 11)
+                    {
+                        et_contactNumber.setError("Contact number must be 11 digit");
+                    }
+                    else
+                    {
+                        final ProgressDialog progressDialog = new ProgressDialog(user_form.this);
+                        progressDialog.setTitle("Creating account");
+                        progressDialog.show();
+
+                        StorageReference fileReference = userStorage.child(imageUri.getLastPathSegment());
+                        String imageName = imageUri.getLastPathSegment();
+
+                        fileReference.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                fileReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                    @Override
+                                    public void onSuccess(Uri uri) {
+                                        final String imageURL = uri.toString();
+
+                                        String uid = "";
+                                        Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageURL, ratings);
+
+                                        userDatabase.push().setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                if (task.isSuccessful()) {
+
+                                                    progressDialog.dismiss();
+                                                    Intent intent = new Intent(user_form.this, MainActivity.class);
+                                                    startActivity(intent);
+                                                    Toast.makeText(user_form.this, "User Created", Toast.LENGTH_LONG).show();
+
+                                                } else {
+                                                    Toast.makeText(user_form.this, "Creation Failed ", Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                        });
+                                    }
+                                })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Toast.makeText(user_form.this, "Failed: ", Toast.LENGTH_LONG).show();
+                                            }
+                                        });
+
+                            }
+                        });
+
+
+                    }
                 }
 
             }
@@ -157,302 +377,20 @@ public class user_form extends AppCompatActivity {
                     if(!checkCameraPermission()){
                         requestCameraPermission();
                     }else
-                        PickImage();
+                        getImage();
 
                 }else{
                     if(!checkStoragePermission()){
                         requestStoragePermission();
                     }else
-                        PickImage();
+                        getImage();
                 }
             }
         });
 
     }
 
-    private void updateUser() {
-        {
-            String firstName = et_firstName.getText().toString();
-            String lastName = et_lastName.getText().toString();
-            String username = et_username.getText().toString();
-            String password = "";
-            String confirmPass = et_confirmPassword.getText().toString();
-            String contactNum = et_contactNumber.getText().toString();
-            String ratings = "0";
-
-            if (imageUri == null)
-            {
-                Toast.makeText(this, "Profile photo is required", Toast.LENGTH_SHORT).show();
-            }
-            else if (TextUtils.isEmpty(firstName))
-            {
-                et_firstName.setError("This field is required");
-            }
-            else if (TextUtils.isEmpty(lastName))
-            {
-                et_lastName.setError("This field is required");
-            }
-            else if (TextUtils.isEmpty(username))
-            {
-                et_username.setError("This field is required");
-            }
-            else if (TextUtils.isEmpty(contactNum) )
-            {
-                et_contactNumber.setError("This field is required");
-            }
-            else if (contactNum.length() != 12)
-            {
-                et_contactNumber.setError("Contact number must be 11 digit");
-            }
-            else
-            {
-                final ProgressDialog progressDialog = new ProgressDialog(this);
-                progressDialog.setTitle("Creating account");
-                progressDialog.show();
-
-                StorageReference fileReference = userStorage.child(imageUri.getLastPathSegment());
-                String imageName = imageUri.getLastPathSegment();
-
-                fileReference.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        fileReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                            @Override
-                            public void onSuccess(Uri uri) {
-                                final String imageURL = uri.toString();
-
-                                String uid = "";
-                                Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageURL, ratings);
-
-                                userDatabase.child(userKey).setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        if (task.isSuccessful()) {
-
-                                            progressDialog.dismiss();
-                                            Intent intent = new Intent(user_form.this, MainActivity.class);
-                                            startActivity(intent);
-                                            Toast.makeText(user_form.this, "User Created", Toast.LENGTH_LONG).show();
-
-                                        } else {
-                                            Toast.makeText(user_form.this, "Creation Failed ", Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-                                });
-                            }
-                        })
-                                .addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        Toast.makeText(user_form.this, "Failed: ", Toast.LENGTH_LONG).show();
-                                    }
-                                });
-
-                    }
-                });
-
-
-            }
-        }
-    }
-
-    private void updateUserNoImage() {
-        String firstName = et_firstName.getText().toString();
-        String lastName = et_lastName.getText().toString();
-        String username = et_username.getText().toString();
-        String contactNum = et_contactNumber.getText().toString();
-
-
-        if (TextUtils.isEmpty(firstName))
-        {
-            et_firstName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(lastName))
-        {
-            et_lastName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(username) )
-        {
-            et_username.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(contactNum))
-        {
-            et_contactNumber.setError("This field is required");
-        }
-        else if (contactNum.length() != 12)
-        {
-            et_contactNumber.setError("Contact number must be 11 digit");
-        }
-        else
-        {
-            final ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setTitle("Creating account");
-            progressDialog.show();
-
-            HashMap<String, Object> hashMap = new HashMap<String, Object>();
-            hashMap.put("firstName", firstName);
-            hashMap.put("lastName", lastName);
-            hashMap.put("contactNum", contactNum);
-            hashMap.put("username", username);
-
-            userDatabase.child(userKey).updateChildren(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
-                @Override
-                public void onComplete(@NonNull Task<Void> task) {
-                    if (task.isSuccessful()) {
-
-                        progressDialog.dismiss();
-                        Intent intent = new Intent(user_form.this, MainActivity.class);
-                        startActivity(intent);
-                        Toast.makeText(user_form.this, "User Updated", Toast.LENGTH_LONG).show();
-
-                    } else {
-                        Toast.makeText(user_form.this, "Update Failed ", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-
-        }
-    }
-
-    private void signUpUser()
-    {
-        String firstName = et_firstName.getText().toString();
-        String lastName = et_lastName.getText().toString();
-        String username = et_username.getText().toString();
-        String password = "";
-        String contactNum = et_contactNumber.getText().toString();
-        String ratings = "0";
-
-        if (imageUri == null)
-        {
-            Toast.makeText(this, "Profile photo is required", Toast.LENGTH_SHORT).show();
-        }
-        else if (TextUtils.isEmpty(firstName))
-        {
-            et_firstName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(lastName))
-        {
-            et_lastName.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(username) )
-        {
-            et_username.setError("This field is required");
-        }
-        else if (TextUtils.isEmpty(contactNum))
-        {
-            et_contactNumber.setError("This field is required");
-        }
-        else if (contactNum.length() != 11)
-        {
-            et_contactNumber.setError("Contact number must be 11 digit");
-        }
-//        else if (TextUtils.isEmpty(password))
-//        {
-//            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-//        }
-//        else if (password.length() < 8)
-//        {
-//            Toast.makeText(this, "Password must be 8 or more characters", Toast.LENGTH_LONG).show();
-//
-//        }
-//        else if (!isValidPassword(password))
-//        {
-//            Toast.makeText(this, "Please choose a stronger password. Try a mix of letters, numbers, and symbols.", Toast.LENGTH_LONG).show();
-//        }
-//        else if (TextUtils.isEmpty(confirmPass))
-//        {
-//            Toast.makeText(this, "Please confirm the password", Toast.LENGTH_SHORT).show();
-//        }
-//        else if (!password.equals(confirmPass))
-//        {
-//            Toast.makeText(this, "Password did not match", Toast.LENGTH_SHORT).show();
-//        }
-        else
-        {
-            final ProgressDialog progressDialog = new ProgressDialog(this);
-            progressDialog.setTitle("Creating account");
-            progressDialog.show();
-
-            StorageReference fileReference = userStorage.child(imageUri.getLastPathSegment());
-            String imageName = imageUri.getLastPathSegment();
-
-            fileReference.putFile(imageUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    fileReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                        @Override
-                        public void onSuccess(Uri uri) {
-                            final String imageURL = uri.toString();
-
-                            String uid = "";
-                            Users users = new Users(uid, firstName, lastName, contactNum, username, password, imageName, imageURL, ratings);
-
-                            userDatabase.push().setValue(users).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                @Override
-                                public void onComplete(@NonNull Task<Void> task) {
-                                    if (task.isSuccessful()) {
-
-                                        progressDialog.dismiss();
-                                        Intent intent = new Intent(user_form.this, MainActivity.class);
-                                        startActivity(intent);
-                                        Toast.makeText(user_form.this, "User Created", Toast.LENGTH_LONG).show();
-
-                                    } else {
-                                        Toast.makeText(user_form.this, "Creation Failed ", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            });
-                        }
-                    })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(user_form.this, "Failed: ", Toast.LENGTH_LONG).show();
-                                }
-                            });
-
-                }
-            });
-
-
-        }
-    }
-
-    private static boolean isValidPassword(String password) {
-
-        String regex = "^(?=.*[0-9])"
-                + "(?=.*[a-z])(?=.*[A-Z])"
-                + "(?=.*[@#$%^&+=?!#$%&()*+,./])"
-                + "(?=\\S+$).{8,15}$";
-
-
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(password);
-
-        return m.matches();
-    }
-
-    private void setRef() {
-
-        et_firstName = findViewById(R.id.et_firstName);
-        et_lastName = findViewById(R.id.et_lastName);
-        et_contactNumber = findViewById(R.id.et_contactNumber);
-        et_username = findViewById(R.id.et_username);
-        et_password_signup = findViewById(R.id.et_password_signup);
-
-        btn_signUp = findViewById(R.id.btn_signUp);
-
-        tv_uploadPhoto = findViewById(R.id.tv_uploadPhoto);
-        textView = findViewById(R.id.textView);
-
-        iv_profile_photo = findViewById(R.id.iv_profile_photo);
-
-        fAuth = FirebaseAuth.getInstance();
-
-    }
-
-    private void PickImage() {
+    private void getImage() {
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
@@ -480,7 +418,6 @@ public class user_form extends AppCompatActivity {
 
         }
     }
-
 
     // validate permissions
     @RequiresApi(api = Build.VERSION_CODES.M)
